@@ -1,16 +1,15 @@
-from django.core.files.base import ContentFile
-from django.core.mail import EmailMessage
-from django.core.mail import get_connection
-from django.core.mail.backends.base import BaseEmailBackend
+import logging
 from email.mime.base import MIMEBase
 
-import logging
+from django.core.files.base import ContentFile
+from django.core.mail import EmailMessage, get_connection
+from django.core.mail.backends.base import BaseEmailBackend
+
 from .conf import settings
 from .models import Attachment, Email
 
 
 class EmailBackend(BaseEmailBackend):
-
     """Wrapper email backend that records all emails in a database model"""
 
     def __init__(self, **kwargs):
@@ -23,6 +22,8 @@ class EmailBackend(BaseEmailBackend):
             recipients = "; ".join(message.to)
             email = None
             html_message = self._get_html_message(message)
+            user_id = getattr(message, "user_id", None)
+            type = getattr(message, "type", None)
             try:
                 email = Email.objects.create(
                     from_email=message.from_email,
@@ -30,6 +31,8 @@ class EmailBackend(BaseEmailBackend):
                     subject=message.subject,
                     body=message.body,
                     html_message=html_message,
+                    user_id=user_id,
+                    type=type,
                 )
             except Exception:
                 logging.error(

@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.template.defaultfilters import linebreaksbr
+
 from .models import Attachment, Email
 
 
@@ -39,11 +40,13 @@ class EmailAdmin(admin.ModelAdmin):
         "html_message",
         "date_sent",
         "ok",
+        "user",
+        "type",
     ]
     inlines = [
         AttachmentInline,
     ]
-    search_fields = ["subject", "body", "recipients"]
+    search_fields = ["subject", "body", "recipients", "user_id"]
     exclude = ["body"]
 
     def has_delete_permission(self, *args, **kwargs):
