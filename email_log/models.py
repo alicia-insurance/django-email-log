@@ -1,5 +1,6 @@
 import pathlib
 
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -7,7 +8,6 @@ from .conf import settings
 
 
 class Email(models.Model):
-
     """Model to store outgoing email information"""
 
     from_email = models.TextField(_("from email"))
@@ -17,6 +17,14 @@ class Email(models.Model):
     ok = models.BooleanField(_("ok"), default=False, db_index=True)
     date_sent = models.DateTimeField(_("date sent"), auto_now_add=True, db_index=True)
     html_message = models.TextField(_("HTML message"), blank=True)
+    user = models.ForeignKey(
+        get_user_model(),
+        related_name="emails",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    type = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return "{s.recipients}: {s.subject}".format(s=self)
@@ -41,7 +49,6 @@ def get_attachment_path(instance, filename: str) -> str:
 
 
 class Attachment(models.Model):
-
     """Model to store attachments of outgoing email"""
 
     file = models.FileField(
