@@ -4,9 +4,22 @@ from email.mime.base import MIMEBase
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage, get_connection
 from django.core.mail.backends.base import BaseEmailBackend
+from django.db import connection
 
 from .conf import settings
 from .models import Attachment, Email
+
+X_EMAIL_LOG_ID_HEADER = "X-Email-Log-Id"
+X_TENANT_SCHEMA_HEADER = "X-Tenant-Schema"
+
+
+def _attach_custom_headers(message, email):
+    if email is None:
+        return
+    headers = dict(message.extra_headers or {})
+    headers[X_EMAIL_LOG_ID_HEADER] = str(email.pk)
+    headers[X_TENANT_SCHEMA_HEADER] = connection.get_schema()
+    message.extra_headers = headers
 
 
 class EmailBackend(BaseEmailBackend):
@@ -34,6 +47,7 @@ class EmailBackend(BaseEmailBackend):
                     user_id=user_id,
                     type=type,
                 )
+                _attach_custom_headers(message, email)
             except Exception:
                 logging.error(
                     "Failed to save email to database (create)", exc_info=True
